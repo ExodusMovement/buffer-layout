@@ -151,63 +151,6 @@ The buffer-layout way:
 
 See [Union](http://pabigot.github.io/buffer-layout/module-Layout-Union.html).
 
-### Decoding into class instances
-
-Using the same 5-byte packet structure but with JavaScript classes
-representing the union and the variants:
-
-    function Union() { }
-    lo.bindConstructorLayout(Union,
-                             lo.union(lo.u8('t'), lo.seq(lo.u8(), 4, 'u8')));
-
-    function Vn() {}
-    util.inherits(Vn, Union);
-    lo.bindConstructorLayout(Vn,
-                             Union.layout_.addVariant('n'.charCodeAt(0), 'nul'));
-
-    function Vu32(v) { this.u32 = v; }
-    util.inherits(Vu32, Union);
-    lo.bindConstructorLayout(Vu32,
-                             Union.layout_.addVariant('w'.charCodeAt(0), lo.u32(), 'u32'));
-
-    function Vs16(v) { this.s16 = v; }
-    util.inherits(Vs16, Union);
-    lo.bindConstructorLayout(Vs16,
-                             Union.layout_.addVariant('h'.charCodeAt(0), lo.seq(lo.s16(), 2), 's16'));
-
-    function Vf32(v) { this.f32 = v; }
-    util.inherits(Vf32, Union);
-    lo.bindConstructorLayout(Vf32,
-                             Union.layout_.addVariant('f'.charCodeAt(0), lo.f32(), 'f32'));
-
-    let v = Union.decode(Buffer.from('7778563412', 'hex'));
-    assert(v instanceof Vu32);
-    assert(v instanceof Union);
-    assert.equal(v.u32, 0x12345678);
-
-    v = Union.decode(Buffer.from('a5a5a5a5a5', 'hex'));
-    assert(v instanceof Union);
-    assert.equal(v.t, 0xa5);
-    assert.deepEqual(v.u8, [0xa5, 0xa5, 0xa5, 0xa5]);
-
-    const b = Buffer.alloc(Union.layout_.span);
-    v = new Vf32(23.625);
-    v.encode(b);
-    assert.equal(Buffer.from('660000bd41', 'hex').compare(b), 0);
-
-    b.fill(0xFF);
-    v = new Vn();
-    v.encode(b);
-    assert.equal(Buffer.from('6effffffff', 'hex').compare(b), 0);
-
-Note that one variant (`'n'`) carries no data, leaving the remainder of
-the buffer unchanged when stored.
-
-See
-[Layout.makeDestinationObject()](http://pabigot.github.io/buffer-layout/module-Layout-Layout.html#makeDestinationObject)
-and
-[bindConstructorLayout](http://pabigot.github.io/buffer-layout/module-Layout.html#.bindConstructorLayout).
-
 ### Packed bit fields on a little-endian machine
 
 The C definition:
